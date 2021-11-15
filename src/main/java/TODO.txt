@@ -1,0 +1,17 @@
+[x] Get bmp image bytes
+[x] Convert bytes to binary strings
+[x] Make function that displays bmp image from byte[] (start at byte 54!!!!!!)
+    http://www.javased.com/?post=1193748
+[x] Encode message into 2 LSB
+[x] Save encoded image into .bmp file
+[x] Try making an all black/white image by make all bytes 11111111/00000000
+[ ] Implement the bmp version 2 file format (https://www.fileformat.info/format/bmp/egff.htm)
+    [ ] File header --> bitmap header --> color palette --> bitmap data
+[ ] Make sure you know how each manipulation actually works
+[ ] Display image from 2 LSB
+    --> Set the bits per pixel to 1 in the bitmap header
+[ ] Decode the message from a .bmp file
+
+
+
+
