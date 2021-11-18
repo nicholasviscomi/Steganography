@@ -5,12 +5,11 @@
 [x] Encode message into 2 LSB
 [x] Save encoded image into .bmp file
 [x] Try making an all black/white image by make all bytes 11111111/00000000
-[ ] Implement the bmp version 2 file format (https://www.fileformat.info/format/bmp/egff.htm)
-    [ ] File header --> bitmap header --> color palette --> bitmap data
-[ ] Make sure you know how each manipulation actually works
-[ ] Display image from 2 LSB
+[x] Make sure you know how each manipulation actually works
+[x] Decode the message from a .bmp file
+[ ] Display image from 1 LSB
     --> Set the bits per pixel to 1 in the bitmap header
-[ ] Decode the message from a .bmp file
+    --> Look at the headers of the 8-bit and 1-bit images
 
 
 
