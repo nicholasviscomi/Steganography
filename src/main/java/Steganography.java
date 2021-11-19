@@ -6,7 +6,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
-import java.util.Random;
+import java.nio.file.Path;
+import java.util.Objects;
+
+import Utilities.FileHelper;
 
 public class Steganography {
     public static void main(String[] args) {
@@ -18,71 +21,25 @@ public class Steganography {
     String BWImgPath = "src/main/Images/Default/1bit.bmp";
     String TigerImgPath = "src/main/Images/Default/tiger.bmp";
     String LenaImgPath = "src/main/Images/Default/lena512.bmp";
-    String doggieImgPath = "src/main/Images/Default/doggie.bmp";
+    String DoggieImgPath = "src/main/Images/Default/doggie.bmp";
 
+    FileHelper fh = new FileHelper();
     public Steganography() {
 //      <=========MAIN METHOD==========>
-        String msg = "This is a message";
-        mainMethod(msg, "Doggie", doggieImgPath);
-//        mainMethod(msg, "Tiger", TigerImgPath);
+        try {
+            String msg = fh.readTxtFromFile("src/main/RandTextFile.txt");
+            mainMethod(msg, "Doggie", DoggieImgPath);
+        } catch (Exception e) { e.printStackTrace(); }
 
 //      <=========DEBUG================>
 //        debug();
-
-//      <=========RAND================>
-//        bmpEditingPractice(BWImgPath, "Test1Bit.bmp");
-    }
-
-    private void bmpEditingPractice(String srcFile, String imgName) {
-        try {
-            File f = new File(srcFile);
-            contents = Files.readAllBytes(f.toPath());
-
-            //convert each byte from 0-255 into a binary string
-
-            int bpp = Files.readAllBytes(f.toPath())[28]; //bits per pixel field in header
-            if (bpp == 24) { //24 bit color: 8-bit int for (blue, green, red)
-                binContents = byteToBinary(contents, bpp);
-
-                int c = 0, b = 0, g = 0, r = 0;
-                for (int i = 54; i < binContents.length; i++) {
-                    //pixel data starts at byte 54 everything before that is important file information
-                    StringBuilder binByte = binContents[i];
-                    //KEY: make rgb pixels with byte val, converting each to binary, then adding to pixel data
-                    //Image width: 300 BGR pixels
-                    Random rand = new Random();
-                    String[] nextBGRpixel = new String[3];
-                    nextBGRpixel[0] = Integer.toBinaryString(b); //Blue
-                    nextBGRpixel[1] = Integer.toBinaryString(g); //Green
-                    nextBGRpixel[2] = Integer.toBinaryString(r); //Red
-
-                    binByte.replace(0, binByte.length(), nextBGRpixel[c]);
-                    c++;
-                    if (c == 3) {
-                        c = 0;
-                        b = rand.nextInt(100);
-                        g = rand.nextInt(100);
-                        r = rand.nextInt(100);
-                    }
-
-                }
-                imgFromBytes(binaryToBytes(binContents), imgName, "Debug");
-            } else if (bpp == 1) { //black and white img
-                System.out.println("Editing black and white img");
-
-            }
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private void mainMethod(String msg, String newDirName, String srcImagePath) {
         try {
             File f = new File(srcImagePath);
             contents = Files.readAllBytes(f.toPath());
-            int start = getPixelOffset(contents);
+            int start = getPixelOffset(contents); //header field showing where image data starts
 
             //convert each byte from 0-255 into a binary string
             binContents = byteToBinary(contents, 24);
@@ -92,18 +49,17 @@ public class Steganography {
 
             //turns the string sof binary intro bytes that can then be turned into an image
             byte[] encodedContents = binaryToBytes(binContents);
+            cleanOutputDir(newDirName);
             imgFromBytes(encodedContents, "EncodedImage.bmp", newDirName);
 
-//            File encodedImg = new File("src/main/" + newDirName + "/EncodedImage.bmp");
-            byte[] encImgBytes = encodedContents; //Files.readAllBytes(encodedImg.toPath());
+            File encodedImg = new File("src/output/" + newDirName + "/EncodedImage.bmp");
+            byte[] encImgBytes = Files.readAllBytes(encodedImg.toPath());
 
-            String binMsg = getBinMessage(byteToBinary(encImgBytes, 24), start, msg.length(), 1);
-            System.out.println("BinMsg: " + binMsg);
+            String binMsg = getBinMessage(byteToBinary(encImgBytes, 24), getPixelOffset(encImgBytes), msg.length(), 1);
             String plainTxtMsg = binaryToMsg(binMsg);
-            System.out.println("Plain: " + plainTxtMsg);
 
-            File decodedMsgFile = new File("src/main/" + newDirName + "/EncodedMessage.txt");
-            FileWriter fw = new FileWriter(decodedMsgFile.getPath());
+            File decodedMsgFile = new File("src/output/" + newDirName + "/EncodedMessage.txt");
+            FileWriter fw = new FileWriter(decodedMsgFile.getPath(), false);
             fw.write(plainTxtMsg);
             fw.close();
         } catch (Exception e) {
@@ -127,7 +83,7 @@ public class Steganography {
 //        };
 
         try {
-            File f = new File(doggieImgPath);
+            File f = new File(DoggieImgPath);
             test = byteToBinary(Files.readAllBytes(f.toPath()), 24);
 
             String msg = "Fart";
@@ -147,10 +103,7 @@ public class Steganography {
 
     private int getPixelOffset(byte[] contents) {
         byte[] pixelOffsetBytes = { contents[10], contents[11], contents[12], contents[13] };
-        int pixelOffset = java.nio.ByteBuffer.wrap(pixelOffsetBytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
-        System.out.println("Pixel Offset: " + pixelOffset);
-
-        return pixelOffset;
+        return java.nio.ByteBuffer.wrap(pixelOffsetBytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
     }
     private byte[] headerForImage(String path) {
         File file;
@@ -226,8 +179,6 @@ public class Steganography {
             for (int i = 0; i < 54; i++) {
                 res.append(bytes[i]);
             }
-            System.out.println("28th: " + bytes[28]);
-            System.out.println("Len: " + res.length());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -295,20 +246,25 @@ public class Steganography {
         return res;
     }
 
+    private void cleanOutputDir(String newDirName) throws IOException {
+        File dir = new File("src/output/" + newDirName);
+        for (File f: Objects.requireNonNull(dir.listFiles())) {
+            Files.deleteIfExists(Path.of("src/output/" + newDirName + "/" + f.getName()));
+        }
+    }
+
     private void imgFromBytes(byte[] bytes, String imgName, String newDirName) throws IOException {
         BufferedImage bImg = ImageIO.read(new ByteArrayInputStream(bytes));
 
         //creates a new directory to place the encoded image and decoded text
-        File dirs = new File("src/main/" + newDirName);
-        if (!dirs.exists()) {
-            dirs.mkdirs();
+        File dir = new File("src/output/" + newDirName);
+        if (!dir.exists()) {
+            dir.mkdirs();
         }
 
-        File f = new File("src/main/" + newDirName + "/" + imgName);
+        File f = new File("src/output/" + newDirName + "/" + imgName);
         if (f.createNewFile()) {
             ImageIO.write(bImg, "bmp", f);
-        } else {
-            System.out.println("Steganography.imgFromBytes: did not create file");
         }
     }
 
