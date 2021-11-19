@@ -4,10 +4,9 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.ByteOrder;
 import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.Random;
-import java.util.Scanner;
 
 public class Steganography {
     public static void main(String[] args) {
@@ -23,16 +22,15 @@ public class Steganography {
 
     public Steganography() {
 //      <=========MAIN METHOD==========>
-        String msg = "Hello how are you today?\nI am quite well. Tested negative for COVID!";
-        mainMethod(msg, 54, "Tiger", TigerImgPath);
+        String msg = "This is a message";
+        mainMethod(msg, "Doggie", doggieImgPath);
+//        mainMethod(msg, "Tiger", TigerImgPath);
 
 //      <=========DEBUG================>
 //        debug();
 
 //      <=========RAND================>
 //        bmpEditingPractice(BWImgPath, "Test1Bit.bmp");
-
-//        System.out.println(Arrays.toString(headerForImage(BWImgPath)));
     }
 
     private void bmpEditingPractice(String srcFile, String imgName) {
@@ -68,7 +66,7 @@ public class Steganography {
                     }
 
                 }
-                imgFromBytes(stringToBytes(binContents), imgName, "Debug");
+                imgFromBytes(binaryToBytes(binContents), imgName, "Debug");
             } else if (bpp == 1) { //black and white img
                 System.out.println("Editing black and white img");
 
@@ -80,26 +78,29 @@ public class Steganography {
         }
     }
 
-    private void mainMethod(String msg, int start, String newDirName, String srcImagePath) {
+    private void mainMethod(String msg, String newDirName, String srcImagePath) {
         try {
             File f = new File(srcImagePath);
             contents = Files.readAllBytes(f.toPath());
+            int start = getPixelOffset(contents);
+
             //convert each byte from 0-255 into a binary string
             binContents = byteToBinary(contents, 24);
 
             //Puts the message into the 8th bit of every piece of pixel data
             encodeMessage(binContents, msg, start, 1);
-            //ERROR: when numLSB is >1 it does not work
 
             //turns the string sof binary intro bytes that can then be turned into an image
-            byte[] encodedContents = stringToBytes(binContents);
+            byte[] encodedContents = binaryToBytes(binContents);
             imgFromBytes(encodedContents, "EncodedImage.bmp", newDirName);
 
+//            File encodedImg = new File("src/main/" + newDirName + "/EncodedImage.bmp");
+            byte[] encImgBytes = encodedContents; //Files.readAllBytes(encodedImg.toPath());
 
-            File encodedImg = new File("src/main/" + newDirName + "/EncodedImage.bmp");
-            byte[] encImgBytes = Files.readAllBytes(encodedImg.toPath());
             String binMsg = getBinMessage(byteToBinary(encImgBytes, 24), start, msg.length(), 1);
+            System.out.println("BinMsg: " + binMsg);
             String plainTxtMsg = binaryToMsg(binMsg);
+            System.out.println("Plain: " + plainTxtMsg);
 
             File decodedMsgFile = new File("src/main/" + newDirName + "/EncodedMessage.txt");
             FileWriter fw = new FileWriter(decodedMsgFile.getPath());
@@ -111,25 +112,29 @@ public class Steganography {
     }
 
     private void debug() {
-        StringBuilder[] test = {
-                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
-                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
-                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
-                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
-                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
-                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
-                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
-                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
-                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
-                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100")
-        };
+        StringBuilder[] test;
+//        = {
+//                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
+//                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
+//                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
+//                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
+//                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
+//                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
+//                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
+//                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
+//                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100"),
+//                new StringBuilder("01001101"), new StringBuilder("01011111"), new StringBuilder("01001100"), new StringBuilder("01001100")
+//        };
 
         try {
-            String msg = "Ryder";
-            System.out.println("Bin msg: " + msgToBinary(msg));
-            System.out.println("Reg Bin Contents: " + Arrays.toString(test));
+            File f = new File(doggieImgPath);
+            test = byteToBinary(Files.readAllBytes(f.toPath()), 24);
+
+            String msg = "Fart";
+            System.out.println("BinMsg: " + java.util.Arrays.toString(msgToBinary(msg).split("(?<=\\G........)")));//msgToBinary returns the correct output
+//            System.out.println("Reg Bin Contents: " + Arrays.toString(test));
             encodeMessage(test, msg, 0, 1);
-            System.out.println("Enc Bin Contents: " + Arrays.toString(test));
+//            System.out.println("Enc Bin Contents: " + Arrays.toString(test));
 
             String decMsg = getBinMessage(test, 0, msg.length(), 1);
             System.out.println(binaryToMsg(decMsg));
@@ -140,6 +145,13 @@ public class Steganography {
 
     }
 
+    private int getPixelOffset(byte[] contents) {
+        byte[] pixelOffsetBytes = { contents[10], contents[11], contents[12], contents[13] };
+        int pixelOffset = java.nio.ByteBuffer.wrap(pixelOffsetBytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        System.out.println("Pixel Offset: " + pixelOffset);
+
+        return pixelOffset;
+    }
     private byte[] headerForImage(String path) {
         File file;
         byte[] header = new byte[54];
@@ -162,7 +174,7 @@ public class Steganography {
             header[8] = 0;
             header[9] = 0;
 
-            //PixelDataOffset:4 bytes
+            //PixelDataOffset:4 bytes (index 10-13)
                 //number of bytes between the start of the file and the first byte of pixel data
 
 
@@ -223,11 +235,13 @@ public class Steganography {
         return res.toString();
     }
 
-    private String getBinMessage(StringBuilder[] encodedBin, int start, int msgLen, int numLSB) throws IOException {
+    //retrieves the message hidden in the least significant bit of the image contents
+    private String getBinMessage(StringBuilder[] encodedBin, int start, int msgLen, int numLSB) {
         StringBuilder[] LSB = leastSigBits(encodedBin, numLSB);
         StringBuilder masterString = new StringBuilder();
 
-        for (int i = start; i < start + msgLen*8/numLSB; i++) { //20 = msgLen * 8bits / 2LSB
+        //loops for the length of the message
+        for (int i = start; i < start + msgLen*8/numLSB; i++) {
             StringBuilder s = LSB[i];
             masterString.append(s.toString());
         }
@@ -243,14 +257,8 @@ public class Steganography {
         for (int i = start; i < binContents.length; i++) {
             //pixel data starts at byte 54 everything before that is important file information
             StringBuilder binByte = binContents[i];
-            if (mI < arrBinMsg.length - 1) {
-//                binByte.replace(binByte.length()-1, binByte.length(), String.valueOf(arrBinMsg[mI])); //replaces last char
-//                binByte.replace(binByte.length()-2, binByte.length()-1, String.valueOf(arrBinMsg[++mI])); //replaces second from last char
-                int j = 1;
-                do {
-                    binByte.replace(binByte.length()-j, binByte.length()-j+1, String.valueOf(arrBinMsg[mI]));
-                    j++;
-                } while (j <= numLSB);
+            if (mI < arrBinMsg.length) {
+                binByte.replace(binByte.length()-1, binByte.length(), String.valueOf(arrBinMsg[mI])); //replaces last char
             } else {
                 break;
             }
@@ -261,7 +269,7 @@ public class Steganography {
 
     private String binaryToMsg(String binary) {
         StringBuilder res = new StringBuilder();
-        String[] binStrings = binary.split("(?<=\\G........)");
+        String[] binStrings = binary.split("(?<=\\G........)"); //splits it up every 8 character (8bit ints)
         for (String s: binStrings) {
             int num = Integer.parseInt(s, 2);
             res.append((char) num);
@@ -278,26 +286,29 @@ public class Steganography {
         return result.toString();
     }
 
-    private byte[] stringToBytes(StringBuilder[] binString) {
+    private byte[] binaryToBytes(StringBuilder[] binString) {
         byte[] res = new byte[binString.length];
         int j = 0;
         for (StringBuilder s: binString) {
-            res[j++] = (byte) Long.parseLong(String.valueOf(s), 2);
+            res[j++] = (byte) Long.parseLong(String.valueOf(s), 2); //turns a string of binary into a long then a byte
         }
         return res;
     }
 
     private void imgFromBytes(byte[] bytes, String imgName, String newDirName) throws IOException {
         BufferedImage bImg = ImageIO.read(new ByteArrayInputStream(bytes));
+
+        //creates a new directory to place the encoded image and decoded text
         File dirs = new File("src/main/" + newDirName);
         if (!dirs.exists()) {
             dirs.mkdirs();
         }
+
         File f = new File("src/main/" + newDirName + "/" + imgName);
         if (f.createNewFile()) {
             ImageIO.write(bImg, "bmp", f);
         } else {
-            System.out.println("Steganography.imgFromBytes: could not create file");
+            System.out.println("Steganography.imgFromBytes: did not create file");
         }
     }
 
@@ -308,7 +319,8 @@ public class Steganography {
             int j = 0;
             for (byte b: contents) {
                 StringBuilder binString = new StringBuilder(Integer.toBinaryString(b));
-                while (binString.length() < 8) { //make every binary string 8 characters long
+                //make every binary string 8 characters long (turns 0 --> 00000000)
+                while (binString.length() < 8) {
                     binString.insert(0, "0");
                 }
 
@@ -323,8 +335,8 @@ public class Steganography {
     }
 
     private StringBuilder[] leastSigBits(StringBuilder[] binContents, int numLSB) {
+        //Skims the LSB from binary contents (takes the 1 from 01001101)
         StringBuilder[] LSBits = new StringBuilder[binContents.length];
-
         int j = 0;
         for (StringBuilder s: binContents) {
             LSBits[j] = new StringBuilder(s.substring(s.length() - numLSB));

@@ -1,3 +1,21 @@
+
+
+
+BUGS (commit after each fix):
+[ ] Program only works on the Tiger image
+    --> When the image is created from the bytes retrieved from
+    the EncodedImage, it does not work. When the image is created
+    from encodedContents, it works fine
+        Makes me assume that the error happens
+            (a) during the imgFromBytes function
+            (b) reading the bytes from Encoded image
+            (c) somewhere else I cannot yet see
+[ ] The correct message and image are only created if the new directory DOES NOT exist already
+[ ] Beautify this ugly code
+[ ] Can only encode message to 1 LSB; Function doesn't allow anything > 1
+
+
+
 [x] Get bmp image bytes
 [x] Convert bytes to binary strings
 [x] Make function that displays bmp image from byte[] (start at byte 54!!!!!!)
@@ -10,6 +28,7 @@
 [ ] Display image from 1 LSB
     --> Set the bits per pixel to 1 in the bitmap header
     --> Look at the headers of the 8-bit and 1-bit images
+
 
 
 
